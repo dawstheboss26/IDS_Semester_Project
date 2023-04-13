@@ -8,58 +8,49 @@ import pandas as pd
 
 import sys
 
-ratings = pd.read_csv("data/ratings.csv")
 meta = pd.read_csv("data/movies_metadata.csv")
-sum_rating = dict()
-count_rating = dict()
-avg_rating = dict()
 
-for movie in ratings['movieId']:
-    sum_rating[movie] = sum_rating.setdefault(movie, 0) + ratings['rating']
-    count_rating[movie] = count_rating.setdefault(movie, 0) + 1
+fullVector = []
 
-for movie in sum_rating:
-    # get average movie rating and normalize from 0 to 1
-    avg_rating[movie] = (sum_rating[movie] / count_rating[movie]) / 5 
+# add movies to vector space
+for movie in meta["original_title"]: 
+    fullVector.append([movie])
 
+# add ratings and normalize them -- highest is 10
+for count, rating in enumerate(meta["vote_average"]):
+    rating /= 10
+    fullVector[count].append(rating)
 
-'''
-NEW STUFF below?
-'''
-movieVectors = dict()
-for movie in meta:
-    fullVector = []
+# add year and normalize -- highest is 2020
+for count, year in enumerate(meta["release_date"]):
+    if pd.isna(year):
+        year = 0
+    else:
+        year = year[0:4]
+        year = int(year)
+        if year < 1900:
+            year = 1900
+        year /= 2020
+
+    fullVector[count].append(year)
+
+print(fullVector)
+
+# #! TO DO
+# # add columns for genre (crop to top X genres)
     
-    mid = movie['id']
-    rating = float(movie['vote_average'])
-    print(rating)
+# # add columns for cast (crop top X actors/actresses)
 
-#! TO DO
-# create vector space for movie ratings
+# # add columns for description using the USE API and stick on vector space -- crop length
 
-# add year column: start at 1900 and go until 2023 (anything before 1900 is just normalized to be 1900)
-    year = int(movie['release_date'][:4])
-    if year < 1900:
-        year = 1900
-    
-    #Normalizing first to zero
-    year -= 1900
-    # Movies span from 1900 to 2017? Maybe we can scan csv for the oldest
-    year = float(year)/117.0
-# add columns for genre (crop to top X genres)
-    
-# add columns for cast (crop top X actors/actresses)
+# # add columns for director using the USE API and stick on vector space -- crop length
 
-# add columns for description using the USE API and stick on vector space -- crop length
+# #* checkpoint 1
+# # weight columns/column ranges with cosine similarities
 
-# add columns for director using the USE API and stick on vector space -- crop length
+# #* checkpoint 2 
+# # ask the user for their favorite movie
 
-#* checkpoint 1
-# weight columns/column ranges with cosine similarities
+# # calculate the cosine similarity for the favorite movie with the movies in the vector space
 
-#* checkpoint 2 
-# ask the user for their favorite movie
-
-# calculate the cosine similarity for the favorite movie with the movies in the vector space
-
-# return the recommended movie
+# # return the recommended movie

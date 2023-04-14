@@ -34,10 +34,33 @@ for count, year in enumerate(meta["release_date"]):
 
     fullVector[count].append(year)
 
-print(fullVector)
+# # add columns for 21 genres
+# genres: Music, Family, Drama, Horror, War, Documentary, Adventure, TV Movie, Animation, Mystery, Action, Science Fiction
+#         Foreign, Comedy, Crime, Romance, History, Aniplex, Western, Fantasy, Thriller
 
-# #! TO DO
-# # add columns for genre (crop to top X genres)
+genre_list = ["Music", "Family", "Drama", "Horror", "War", "Documentary", "Adventure", "TV Movie", "Animation", "Mystery", "Action",
+         "Science Fiction", "Foreign", "Comedy", "Crime", "Romance", "History", "Aniplex", "Western", "Fantasy", "Thriller"]
+for count, genres in enumerate(meta["genres"]):
+    genre_vector = [0] * 21
+
+    movie_genres = []
+    genres = genres.replace("'id':", "")
+    num_genres = genres.count(":")
+    genres = genres.split(":")
+    
+    for i in range(num_genres):
+        g = genres[i + 1]
+        g = g.split("'")[1]
+        movie_genres.append(g)
+
+    for category in movie_genres:
+        for num, c in enumerate(genre_list):
+            if category == c:
+                genre_vector[num] = 1
+
+    fullVector[count].extend(genre_vector)
+
+print(fullVector[0])
     
 # # add columns for cast (crop top X actors/actresses)
 

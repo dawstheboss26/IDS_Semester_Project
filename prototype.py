@@ -152,10 +152,11 @@ for i, mid in enumerate(meta['id']):
 # # add columns for description using the USE API and stick on vector space -- crop length
 for i, d in enumerate(meta['overview']):
     try:
-        e = embed([d]).numpy().tolist()[0]
+        e1 = embed([d]).numpy().tolist()[0]
+        e = [(x+1)/2 for x in e1]
     except:
         e = [0]*512
-    if (i % 1000 == 100):
+    if (i % 1000 == 0):
         print(f'embedding description {i}/{len(meta["overview"])}')
     fullVector[i].extend(e)
 

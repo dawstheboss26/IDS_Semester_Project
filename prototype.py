@@ -7,8 +7,9 @@
 import pandas as pd 
 import pprint
 import json
-
+from collections import defaultdict
 import sys
+import re
 
 meta = pd.read_csv("data/movies_metadata.csv")
 credit = pd.read_csv("data/credits.csv")
@@ -64,6 +65,7 @@ for count, genres in enumerate(meta["genres"]):
     fullVector[count].extend(genre_vector)
     
 #* add columns for cast (crop top X actors/actresses)
+'''
 cast_dict = dict()
 for count, cast in enumerate(credit["cast"]):
     movie_cast = []
@@ -103,15 +105,96 @@ for count, cast in enumerate(credit["cast"]):
     #     for actor in cast_vector:
     #         fullVector[i].append(actor)
     fullVector[count].extend(cast_vector)
+'''
+castDict = {}
+castNames = {}
+creditIDs = credit['id']
+for count, cast in enumerate(credit['cast']):
+    #print(cast)
+    m = re.findall("'id': ([0-9A-Za-z\s]*), 'name': '([0-9A-Za-z\s]*)',", cast)
+    if len(m) > 0:
+        for match in m:
+            aid = match[0]
+            name = match[1]
+            mid = creditIDs[count]
+            if aid not in castDict:
+                castDict[aid] = [mid]
+            else:
+                castDict[aid].append(mid)
+            castNames[aid] = name      
 
+#print(len(dirDict))
+sortedKeys = list(sorted(castDict.keys(), key=lambda x: len(castDict[x]), reverse=True))
+newCastDict = {}
+sortedKeys = sortedKeys[:100]
+for item in sortedKeys:
+    newCastDict[item] = castDict[item]
+castDict = {} 
+castDict = dict(sorted(newCastDict.items()))
+movieActorLookup = defaultdict(list)
+for i, aid in enumerate(castDict.keys()):
+    mids = castDict[aid]
+    for mid in mids:
+        movieActorLookup[mid].append(i)
+castVector = []
+for i, mid in enumerate(meta['id']):
+    castVector = [0] * len(castDict)
+    try:
+        for index in movieActorLookup[int(mid)]:
+            castVector[index] = 1
+    except:   
+        fullVector[i].extend(castVector)
+        continue
+    fullVector[i].extend(castVector)
 #! error: credits has 10 more rows than metadata --> have to match up with ID
-
 # print(fullVector[1])
 
 # # add columns for description using the USE API and stick on vector space -- crop length
 
 # # add columns for director using the USE API and stick on vector space -- crop length
+dirDict = {}
+directorNames = {}
+creditIDs = credit['id']
+for count, crew in enumerate(credit['crew']):
+    m = re.findall("'id': ([0-9A-Za-z\s]*), 'job': 'Director', 'name': '([0-9A-Za-z\s]*)',", crew)
+    if len(m) > 0:
+        for match in m:
+            did = match[0]
+            name = match[1]
+            mid = creditIDs[count]
+            if did not in dirDict:
+                dirDict[did] = [mid]
+            else:
+                dirDict[did].append(mid)
+            directorNames[did] = name
 
+# get top 100 directors
+sortedKeys = list(sorted(dirDict.keys(), key=lambda x: len(dirDict[x]), reverse=True))
+newDirDict = {}
+sortedKeys = sortedKeys[:100]
+
+for item in sortedKeys:
+    newDirDict[item] = dirDict[item]
+dirDict = dict(sorted(newDirDict.items()))
+
+dirDict = dict(sorted(dirDict.items()))
+movieDirectorLookup = defaultdict(list)
+for i, did in enumerate(dirDict.keys()):
+    mids = dirDict[did]
+    for mid in mids:
+        movieDirectorLookup[mid].append(i)
+
+dirVector = []
+for i, mid in enumerate(meta['id']):
+    dirVector = [0] * len(dirDict)
+    try:
+        for index in movieDirectorLookup[int(mid)]:
+            dirVector[index] = 1
+    except:
+        fullVector[i].extend(dirVector)
+        continue
+    fullVector[i].extend(dirVector)
+print(fullVector[0])
 # #* checkpoint 1
 # # weight columns/column ranges with cosine similarities
 

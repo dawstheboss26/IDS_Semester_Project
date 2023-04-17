@@ -4,6 +4,7 @@
 #from keras.preprocessing.sequence import pad_sequences
 #from tensorflow import keras
 
+import tensorflow_hub as hub
 import pandas as pd 
 import pprint
 import json
@@ -11,6 +12,7 @@ from collections import defaultdict
 import sys
 import re
 
+embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 meta = pd.read_csv("data/movies_metadata.csv")
 credit = pd.read_csv("data/credits.csv")
 
@@ -146,10 +148,16 @@ for i, mid in enumerate(meta['id']):
         fullVector[i].extend(castVector)
         continue
     fullVector[i].extend(castVector)
-#! error: credits has 10 more rows than metadata --> have to match up with ID
-# print(fullVector[1])
 
 # # add columns for description using the USE API and stick on vector space -- crop length
+for i, d in enumerate(meta['overview']):
+    try:
+        e = embed([d]).numpy().tolist()[0]
+    except:
+        e = [0]*512
+    if (i % 1000 == 100):
+        print(f'embedding description {i}/{len(meta["overview"])}')
+    fullVector[i].extend(e)
 
 # # add columns for director using the USE API and stick on vector space -- crop length
 dirDict = {}

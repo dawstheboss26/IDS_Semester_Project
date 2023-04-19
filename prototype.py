@@ -11,13 +11,16 @@ import json
 from collections import defaultdict
 import sys
 import re
+import editdistance
+import numpy as np
+from numpy.linalg import norm
 
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 meta = pd.read_csv("data/movies_metadata.csv")
 credit = pd.read_csv("data/credits.csv")
 
 fullVector = []
-
+fieldLengths = []
 #* add movies to vector space
 for movie in meta["original_title"]: 
     fullVector.append([movie])
@@ -26,6 +29,8 @@ for movie in meta["original_title"]:
 for count, rating in enumerate(meta["vote_average"]):
     rating /= 10
     fullVector[count].append(rating)
+#append how many fields for this category and its weight
+fieldLengths.append((1, 0.15))
 
 #* add year and normalize -- highest is 2020
 for count, year in enumerate(meta["release_date"]):
@@ -39,6 +44,8 @@ for count, year in enumerate(meta["release_date"]):
         year /= 2020
 
     fullVector[count].append(year)
+    #append how many fields for this category and its weight
+fieldLengths.append((1, 0.1))
 
 #* add columns for 21 genres
 # genres: Music, Family, Drama, Horror, War, Documentary, Adventure, TV Movie, Animation, Mystery, Action, Science Fiction
@@ -65,7 +72,9 @@ for count, genres in enumerate(meta["genres"]):
                 genre_vector[num] = 1
 
     fullVector[count].extend(genre_vector)
-    
+
+#append how many fields for this category and its weight
+fieldLengths.append((21, 0.3))
 #* add columns for cast (crop top X actors/actresses)
 '''
 cast_dict = dict()
@@ -149,6 +158,9 @@ for i, mid in enumerate(meta['id']):
         continue
     fullVector[i].extend(castVector)
 
+#append how many fields for this category and its weight
+fieldLengths.append((len(castDict), 0.15))
+
 # # add columns for description using the USE API and stick on vector space -- crop length
 for i, d in enumerate(meta['overview']):
     try:
@@ -159,7 +171,7 @@ for i, d in enumerate(meta['overview']):
     if (i % 1000 == 0):
         print(f'embedding description {i}/{len(meta["overview"])}')
     fullVector[i].extend(e)
-
+fieldLengths.append((len(e), 0.23))
 # # add columns for director using the USE API and stick on vector space -- crop length
 dirDict = {}
 directorNames = {}
@@ -203,7 +215,16 @@ for i, mid in enumerate(meta['id']):
         fullVector[i].extend(dirVector)
         continue
     fullVector[i].extend(dirVector)
-print(fullVector[0])
+# print(fullVector[0])
+fieldLengths.append((len(dirVector), 0.07))
+outDict = {}
+outDict['fullVector'] = fullVector
+outDict['names'] = meta["original_title"].tolist()
+outDict['fieldLengths'] = fieldLengths
+fout = open('data/fullVectorData.json', 'w')
+fout.write(json.dumps(outDict))
+# # main running loop
+
 # #* checkpoint 1
 # # weight columns/column ranges with cosine similarities
 

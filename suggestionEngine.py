@@ -3,12 +3,16 @@ import editdistance
 import numpy as np
 from numpy.linalg import norm
 
+# open the data from prototype.py (vector space, list of movies, and field lengths)
 fin = open('data/fullVectorData.json', 'r')
 inDictJson = fin.read()
 inDict = json.loads(inDictJson)
-names = inDict['names']
 fullVector = inDict['fullVector']
+names = inDict['names']
+fieldLengths = inDict['fieldLengths']
 newVec = fullVector.copy()
+
+# create vector space and replace 0s with 0.01
 for i, x in enumerate(fullVector):
     for j, y in enumerate(x):
         if y == 0:
@@ -17,9 +21,7 @@ for i, x in enumerate(fullVector):
             newVec[i][j] = y
 fullVector = newVec
 
-
-fieldLengths = inDict['fieldLengths']
-
+# get user input and use edit distance to get the most similar movie to the one they provide
 uinput = input("Enter your favorite movie -->  ")
 bestED = float('inf')
 bestTitleIndex = None
@@ -31,6 +33,7 @@ for i, name in enumerate(names):
 
 print("Finding similar movies to "+bestTitleIndex[0])
 
+# based on the user input's movie as target, find the cosine similarity between that target and every other one
 target = fullVector[bestTitleIndex[1]]
 cosines = []
 # rating, year, genre, cast, desc, dir
@@ -62,6 +65,8 @@ for i, potential in enumerate(fullVector):
     cosines 
 #res = np.argmax(cosines, axis=0)
 #print(cosines)
+
+# the recommended movie is the one with the highest cosine similarity
 res = max(cosines)
 index = cosines.index(res)
 

@@ -1,9 +1,3 @@
-#import tensorflow as tf 
-#from keras.preprocessing.text import Tokenizer
-#from keras.preprocessing.text import tokenizer_from_json
-#from keras.preprocessing.sequence import pad_sequences
-#from tensorflow import keras
-
 import tensorflow_hub as hub
 import pandas as pd 
 import pprint
@@ -15,24 +9,28 @@ import editdistance
 import numpy as np
 from numpy.linalg import norm
 
+# load USE library and data from the Kaggle Movies dataset
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 meta = pd.read_csv("data/movies_metadata.csv")
 credit = pd.read_csv("data/credits.csv")
 
+# fullVector holds every movie and its data
+# fieldLengths holds the length of each field (i.e. genre, year, rating) and weights
 fullVector = []
 fieldLengths = []
-#* add movies to vector space
+
+# add movies to vector space
 for movie in meta["original_title"]: 
     fullVector.append([movie])
 
-#* add ratings and normalize them -- highest is 10
+# add ratings and normalize them -- highest is 10
 for count, rating in enumerate(meta["vote_average"]):
     rating /= 10
     fullVector[count].append(rating)
-#append how many fields for this category and its weight
+# example: one column for ratings and we weight it at 15%
 fieldLengths.append((1, 0.15))
 
-#* add year and normalize -- highest is 2020
+# add year and normalize -- highest is 2020
 for count, year in enumerate(meta["release_date"]):
     if pd.isna(year):
         year = 0
@@ -44,10 +42,9 @@ for count, year in enumerate(meta["release_date"]):
         year /= 2020
 
     fullVector[count].append(year)
-    #append how many fields for this category and its weight
 fieldLengths.append((1, 0.1))
 
-#* add columns for 21 genres
+# add columns for 21 genres
 # genres: Music, Family, Drama, Horror, War, Documentary, Adventure, TV Movie, Animation, Mystery, Action, Science Fiction
 #         Foreign, Comedy, Crime, Romance, History, Aniplex, Western, Fantasy, Thriller
 
@@ -73,55 +70,13 @@ for count, genres in enumerate(meta["genres"]):
 
     fullVector[count].extend(genre_vector)
 
-#append how many fields for this category and its weight
 fieldLengths.append((21, 0.3))
-#* add columns for cast (crop top X actors/actresses)
-'''
-cast_dict = dict()
-for count, cast in enumerate(credit["cast"]):
-    movie_cast = []
-    cast = cast.replace("'id':", "")
-    cast = cast.replace("'cast_id':", "")
-    cast = cast.replace("'character':", "")
-    cast = cast.replace("'credit_id':", "")
-    cast = cast.replace("'gender':", "")
-    cast = cast.replace("'order':", "")
-    cast = cast.replace("'profile_path':", "")
-    num_cast = cast.count(":")
-    cast = cast.split(":")
 
-    for i in range(num_cast):
-        c = cast[i + 1]
-        try:
-            c = c.split("'")[1]
-            if c == ",  ":
-                continue
-            movie_cast.append(c)
-        except:
-            continue
-
-    for actor in movie_cast:
-        cast_dict[actor] = cast_dict.setdefault(actor, 0) + 1
-
-sorted_cast_dict = dict(sorted(cast_dict.items(), key=lambda x:x[1], reverse=True))
-
-top_100_cast = list(sorted_cast_dict.keys())[0:100]
-
-for count, cast in enumerate(credit["cast"]):
-    cast_vector = [0] * 100
-    for num, actor in enumerate(top_100_cast):
-        if actor in cast:
-            cast_vector[num] = 1
-    # for i in range(len(fullVector)):
-    #     for actor in cast_vector:
-    #         fullVector[i].append(actor)
-    fullVector[count].extend(cast_vector)
-'''
+# add columns for cast (crop top X actors/actresses)
 castDict = {}
 castNames = {}
 creditIDs = credit['id']
 for count, cast in enumerate(credit['cast']):
-    #print(cast)
     m = re.findall("'id': ([0-9A-Za-z\s]*), 'name': '([0-9A-Za-z\s]*)',", cast)
     if len(m) > 0:
         for match in m:
@@ -134,7 +89,7 @@ for count, cast in enumerate(credit['cast']):
                 castDict[aid].append(mid)
             castNames[aid] = name      
 
-#print(len(dirDict))
+# get top 100 actors/actresses to put in the vector space
 sortedKeys = list(sorted(castDict.keys(), key=lambda x: len(castDict[x]), reverse=True))
 newCastDict = {}
 sortedKeys = sortedKeys[:100]
@@ -142,6 +97,8 @@ for item in sortedKeys:
     newCastDict[item] = castDict[item]
 castDict = {} 
 castDict = dict(sorted(newCastDict.items()))
+
+# add to vector space -- 0 if actor is not in the movie, 1 if actor is in the movie
 movieActorLookup = defaultdict(list)
 for i, aid in enumerate(castDict.keys()):
     mids = castDict[aid]
@@ -158,10 +115,9 @@ for i, mid in enumerate(meta['id']):
         continue
     fullVector[i].extend(castVector)
 
-#append how many fields for this category and its weight
 fieldLengths.append((len(castDict), 0.15))
 
-# # add columns for description using the USE API and stick on vector space -- crop length
+# add columns for description using the USE API and stick on vector space -- crop length
 for i, d in enumerate(meta['overview']):
     try:
         e1 = embed([d]).numpy().tolist()[0]
@@ -171,7 +127,9 @@ for i, d in enumerate(meta['overview']):
     if (i % 1000 == 0):
         print(f'embedding description {i}/{len(meta["overview"])}')
     fullVector[i].extend(e)
+
 fieldLengths.append((len(e), 0.23))
+
 # # add columns for director using the USE API and stick on vector space -- crop length
 dirDict = {}
 directorNames = {}
@@ -215,22 +173,13 @@ for i, mid in enumerate(meta['id']):
         fullVector[i].extend(dirVector)
         continue
     fullVector[i].extend(dirVector)
-# print(fullVector[0])
+
 fieldLengths.append((len(dirVector), 0.07))
+
+# get final outputs
 outDict = {}
 outDict['fullVector'] = fullVector
 outDict['names'] = meta["original_title"].tolist()
 outDict['fieldLengths'] = fieldLengths
 fout = open('data/fullVectorData.json', 'w')
 fout.write(json.dumps(outDict))
-# # main running loop
-
-# #* checkpoint 1
-# # weight columns/column ranges with cosine similarities
-
-# #* checkpoint 2 
-# # ask the user for their favorite movie
-
-# # calculate the cosine similarity for the favorite movie with the movies in the vector space
-
-# # return the recommended movie

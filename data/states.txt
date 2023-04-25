@@ -1,0 +1,30 @@
+ANOTHER, Give me another one
+ANOTHER, What is the next best movie?
+ANOTHER, Another
+ANOTHER, I would like a different option
+ANOTHER, Can you show me a different movie? 
+SIMILAR_MOVIE, Actually I would like to watch a movie similar to X
+SIMILAR_MOVIE, What about a movie similar to X?
+SIMILAR_MOVIE, Give me a movie similar to X
+SIMILAR_MOVIE, I want a movie like X
+SIMILAR_MOVIE, Can you show me a movie like X?
+SPECIFY_GENRE, I want to watch a comedy
+SPECIFY_GENRE, Show me a romance film
+SPECIFY_GENRE, Are there any movies that are crime?
+SPECIFY_GENRE, What movies would you recommend in the drama genre?
+SPECIFY_GENRE, I would like to see an animated movie
+SPECIFY_DIRECTOR
+SPECIFY_DIRECTOR
+SPECIFY_DIRECTOR
+SPECIFY_DIRECTOR
+SPECIFY_DIRECTOR
+SPECIFY_ACTOR
+SPECIFY_ACTOR
+SPECIFY_ACTOR
+SPECIFY_ACTOR
+SPECIFY_ACTOR
+ACCEPT, Perfect! I'll watch this one
+ACCEPT, Thank you!
+ACCEPT, I will watch this one
+ACCEPT, Great! Thank you for your help
+ACCEPT, I'm excited to watch this movie

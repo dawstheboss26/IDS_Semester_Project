@@ -17,6 +17,9 @@ class State(Enum):
     ACCEPT = 6
     UNK = 7
 
+genres = {"Music", "Family", "Drama", "Horror", "War", "Documentary", "Adventure", "TV Movie", "Animation", "Mystery", "Action",
+         "Science Fiction", "Foreign", "Comedy", "Crime", "Romance", "History", "Aniplex", "Western", "Fantasy", "Thriller"}
+
 def findTargetMovie():
     # get user input and use edit distance to get the most similar movie to the one they provide
     uinput = input("Name a movie that you want the recommended movie to be similar to: ")
@@ -99,7 +102,7 @@ def determineNextState():
     if reply == "7":
         textClass = State.UNK
     
-    return textClass
+    return (textClass, uinput)
     
 
     # next states include: ANOTHER, SIMILAR_MOVIE, SPECIFY_GENRE, SPECIFY_DIRECTOR, SPECIFY_ACTOR, ACCEPT
@@ -134,17 +137,24 @@ cosines = calcCosineSim(bestTitleIndex)
 recommend(cosines, mIndex)
 
 while (not accept):
-    nextState = determineNextState()
+    nextState, uinput = determineNextState()
 
     if nextState == State.ANOTHER:
         mIndex += 1
         recommend(cosines, mIndex)
     elif nextState == State.SIMILAR_MOVIE:
+        mIndex = 0
         bestTitleIndex = findTargetMovie()
         cosines = calcCosineSim(bestTitleIndex)
-        recommend(cosines, 0)
+        recommend(cosines, mIndex)
     elif nextState == State.SPECIFY_GENRE:
-        continue
+        found = 0
+        for genre in genres:
+            if genre.lower() in uinput.lower():
+                found = 1
+                #* write code here to only select a movie with the highest cosine similarity that also has the correct genre
+        if found == 0:
+            print("There are no movies that are in this genre. Try again")
     elif nextState == State.SPECIFY_DIRECTOR:
         continue
     elif nextState == State.SPECIFY_ACTOR:

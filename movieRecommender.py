@@ -114,6 +114,9 @@ inDict = json.loads(inDictJson)
 fullVector = inDict['fullVector']
 names = inDict['names']
 fieldLengths = inDict['fieldLengths']
+genreDict = inDict['genreDict']
+castDict = inDict['castDict']
+dirDict = inDict['dirDict']
 newVec = fullVector.copy()
 
 # create vector space and replace 0s with 0.01

@@ -4,12 +4,14 @@ import pprint
 import json
 from collections import defaultdict
 import sys
+import os
 import re
 import editdistance
 import numpy as np
 from numpy.linalg import norm
 
 # load USE library and data from the Kaggle Movies dataset
+os.environ['TFHUB_CACHE_DIR'] = '/data'
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 meta = pd.read_csv("data/movies_metadata.csv")
 credit = pd.read_csv("data/credits.csv")
@@ -47,9 +49,11 @@ fieldLengths.append((1, 0.1))
 # add columns for 21 genres
 # genres: Music, Family, Drama, Horror, War, Documentary, Adventure, TV Movie, Animation, Mystery, Action, Science Fiction
 #         Foreign, Comedy, Crime, Romance, History, Aniplex, Western, Fantasy, Thriller
-
+genre_dict = {}
 genre_list = ["Music", "Family", "Drama", "Horror", "War", "Documentary", "Adventure", "TV Movie", "Animation", "Mystery", "Action",
          "Science Fiction", "Foreign", "Comedy", "Crime", "Romance", "History", "Aniplex", "Western", "Fantasy", "Thriller"]
+for count, genre in enumerate(genre_list):
+    genre_dict[genre] = count
 for count, genres in enumerate(meta["genres"]):
     genre_vector = [0] * 21
 
@@ -89,18 +93,22 @@ for count, cast in enumerate(credit['cast']):
                 castDict[aid].append(mid)
             castNames[aid] = name      
 
-# get top 100 actors/actresses to put in the vector space
+# get top x actors/actresses to put in the vector space
 sortedKeys = list(sorted(castDict.keys(), key=lambda x: len(castDict[x]), reverse=True))
 newCastDict = {}
-sortedKeys = sortedKeys[:100]
+sortedKeys = sortedKeys[:300]
 for item in sortedKeys:
     newCastDict[item] = castDict[item]
 castDict = {} 
 castDict = dict(sorted(newCastDict.items()))
 
+#package the names and indexes for saving
+outCastDict = {}
 # add to vector space -- 0 if actor is not in the movie, 1 if actor is in the movie
 movieActorLookup = defaultdict(list)
 for i, aid in enumerate(castDict.keys()):
+    #package names and their indexes
+    outCastDict[castNames[aid]] = i
     mids = castDict[aid]
     for mid in mids:
         movieActorLookup[mid].append(i)
@@ -150,7 +158,7 @@ for count, crew in enumerate(credit['crew']):
 # get top 100 directors
 sortedKeys = list(sorted(dirDict.keys(), key=lambda x: len(dirDict[x]), reverse=True))
 newDirDict = {}
-sortedKeys = sortedKeys[:100]
+sortedKeys = sortedKeys[:300]
 
 for item in sortedKeys:
     newDirDict[item] = dirDict[item]
@@ -158,7 +166,12 @@ dirDict = dict(sorted(newDirDict.items()))
 
 dirDict = dict(sorted(dirDict.items()))
 movieDirectorLookup = defaultdict(list)
+
+outDirDict = {}
 for i, did in enumerate(dirDict.keys()):
+    #package directors
+    outDirDict[directorNames[did]] = i
+
     mids = dirDict[did]
     for mid in mids:
         movieDirectorLookup[mid].append(i)
@@ -181,5 +194,9 @@ outDict = {}
 outDict['fullVector'] = fullVector
 outDict['names'] = meta["original_title"].tolist()
 outDict['fieldLengths'] = fieldLengths
+outDict['genreDict'] = genre_dict
+outDict['castDict'] = outCastDict
+outDict['dirDict'] = outDirDict
+
 fout = open('data/fullVectorData.json', 'w')
 fout.write(json.dumps(outDict))

@@ -8,6 +8,18 @@ from enum import Enum
 
 openai.api_key_path = "apikey.txt"
 
+# open the data from prototype.py (vector space, list of movies, and field lengths)
+fin = open('data/fullVectorData.json', 'r')
+inDictJson = fin.read()
+inDict = json.loads(inDictJson)
+fullVector = inDict['fullVector']
+names = inDict['names']
+fieldLengths = inDict['fieldLengths']
+genreDict = inDict['genreDict']
+castDict = inDict['castDict']
+dirDict = inDict['dirDict']
+newVec = fullVector.copy()
+
 class State(Enum):
     ANOTHER = 1
     SIMILAR_MOVIE = 2
@@ -20,6 +32,17 @@ class State(Enum):
 genres = {"Music", "Family", "Drama", "Horror", "War", "Documentary", "Adventure", "TV Movie", "Animation", "Mystery", "Action",
          "Science Fiction", "Foreign", "Comedy", "Crime", "Romance", "History", "Aniplex", "Western", "Fantasy", "Thriller"}
 
+def calcEditDistance(target, vector):
+    bestED = float('inf')
+    bestMatch = None
+    for index, item in enumerate(vector):
+        newED = editdistance.eval(target, item)
+        if bestED > newED:
+            bestED = newED
+            bestMatch = (item, index)
+
+    return bestMatch
+
 def findTargetMovie():
     # get user input and use edit distance to get the most similar movie to the one they provide
     uinput = input("Name a movie that you want the recommended movie to be similar to: ")
@@ -31,16 +54,16 @@ def findTargetMovie():
             bestED = newED
             bestTitleIndex = (name, i)
 
-    print("Finding similar movies to " + bestTitleIndex[0])
+    print("\nFinding similar movies to " + bestTitleIndex[0])
     return bestTitleIndex
 
-def calcCosineSim(bestTitleIndex):
+def calcCosineSim(bestTitleIndex, library = fullVector):
     # based on the user input's movie as target, find the cosine similarity between that target and every other one
     target = fullVector[bestTitleIndex[1]]
     cosines = []
     # rating, year, genre, cast, desc, dir
-    for i, potential in enumerate(fullVector):
-        if i == bestTitleIndex[1]:
+    for i, potential in enumerate(library):
+        if potential[0] == target[0]:
             cosines.append(0)
             continue
         acc = 0
@@ -63,16 +86,16 @@ def calcCosineSim(bestTitleIndex):
         cosines 
     return cosines
 
-def recommend(cosines, mIndex = 0): 
+def recommend(cosines, mIndex = 0, names = names): 
     # the recommended movie is the one with the highest cosine similarity
     movCos = zip(names, cosines)
     movCos = sorted(movCos, key=lambda x: x[1], reverse=True)
     rec = movCos[mIndex][0]
 
-    print(f'I would suggest: {rec}')
+    print(f'\nI would suggest: {rec}')
 
 def determineNextState():
-    uinput = input("> ")
+    uinput = input("\n> ")
     textClass = None
 
     # use ChatGPT API here for text classification -- send uinput to it
@@ -84,12 +107,13 @@ def determineNextState():
     try:
         theClass = int(reply)
     except:
-        print("could not parse chatGPT classifier response")
-        return State.UNK
+        print("\nCould not parse chatGPT classifier response. Try again")
+        return (State.UNK, "")
 
     if reply == "1":
         textClass = State.ANOTHER
     if reply == "2":
+        #! this state is never selected
         textClass = State.SIMILAR_MOVIE
     if reply == "3":
         textClass = State.SPECIFY_GENRE
@@ -101,23 +125,12 @@ def determineNextState():
         textClass = State.ACCEPT
     if reply == "7":
         textClass = State.UNK
-    
+        
+    # print(textClass)
     return (textClass, uinput)
     
 
     # next states include: ANOTHER, SIMILAR_MOVIE, SPECIFY_GENRE, SPECIFY_DIRECTOR, SPECIFY_ACTOR, ACCEPT
-
-# open the data from prototype.py (vector space, list of movies, and field lengths)
-fin = open('data/fullVectorData.json', 'r')
-inDictJson = fin.read()
-inDict = json.loads(inDictJson)
-fullVector = inDict['fullVector']
-names = inDict['names']
-fieldLengths = inDict['fieldLengths']
-genreDict = inDict['genreDict']
-castDict = inDict['castDict']
-dirDict = inDict['dirDict']
-newVec = fullVector.copy()
 
 # create vector space and replace 0s with 0.01
 for i, x in enumerate(fullVector):
@@ -139,6 +152,9 @@ cosines = calcCosineSim(bestTitleIndex)
 
 recommend(cosines, mIndex)
 
+subNames = names
+subCosines = cosines
+
 while (not accept):
     nextState, uinput = determineNextState()
 
@@ -151,20 +167,25 @@ while (not accept):
         cosines = calcCosineSim(bestTitleIndex)
         recommend(cosines, mIndex)
     elif nextState == State.SPECIFY_GENRE:
-        found = 0
-        for genre in genres:
-            if genre.lower() in uinput.lower():
-                found = 1
-                #* write code here to only select a movie with the highest cosine similarity that also has the correct genre
-        if found == 0:
-            print("There are no movies that are in this genre. Try again")
+        mIndex = 0
+        # genres start at fullVector index 3
+        genre = calcEditDistance(uinput, genreDict.keys())[0]
+        print(f"\nLooking for a movie in the {genre} genre")
+        genreMovies = [movie for movie in fullVector if movie[genreDict[genre.title()] + 3] == 1]
+        subNames = [movie[0] for movie in genreMovies]
+        subCosines = calcCosineSim(bestTitleIndex, genreMovies)
+        recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_DIRECTOR:
+        mIndex = 0
+        # directors start at fullVector index 836 (check again)
         continue
     elif nextState == State.SPECIFY_ACTOR:
+        mIndex = 0
+        # cast start at fullVector index 24
         continue
     elif nextState == State.UNK:
-        print("I'm sorry, I don't understand how that pertains to movies.")
+        print("\nI'm sorry, I don't understand how that pertains to movies.")
         continue
     else:
         accept = 1
-        print("Happy watching!")
+        print("\nHappy watching!")

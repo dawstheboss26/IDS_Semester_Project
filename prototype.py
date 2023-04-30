@@ -11,6 +11,7 @@ import numpy as np
 from numpy.linalg import norm
 
 # load USE library and data from the Kaggle Movies dataset
+os.environ['TFHUB_CACHE_DIR'] = '/data'
 embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 meta = pd.read_csv("data/movies_metadata.csv")
 credit = pd.read_csv("data/credits.csv")
@@ -46,6 +47,8 @@ for count, year in enumerate(meta["release_date"]):
 fieldLengths.append((1, 0.1))
 
 # add columns for 21 genres
+# genres: Music, Family, Drama, Horror, War, Documentary, Adventure, TV Movie, Animation, Mystery, Action, Science Fiction
+#         Foreign, Comedy, Crime, Romance, History, Aniplex, Western, Fantasy, Thriller
 genre_dict = {}
 genre_list = ["Music", "Family", "Drama", "Horror", "War", "Documentary", "Adventure", "Tv Movie", "Animation", "Mystery", "Action",
          "Science Fiction", "Foreign", "Comedy", "Crime", "Romance", "History", "Aniplex", "Western", "Fantasy", "Thriller"]

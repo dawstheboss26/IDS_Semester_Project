@@ -154,6 +154,7 @@ recommend(cosines, mIndex)
 
 subNames = names
 subCosines = cosines
+subFullVector = fullVector
 
 while (not accept):
     nextState, uinput = determineNextState()
@@ -171,18 +172,28 @@ while (not accept):
         # genres start at fullVector index 3
         genre = calcEditDistance(uinput, genreDict.keys())[0]
         print(f"\nLooking for a movie in the {genre} genre")
-        genreMovies = [movie for movie in fullVector if movie[genreDict[genre.title()] + 3] == 1]
+        genreMovies = [movie for movie in subFullVector if movie[genreDict[genre.title()] + 3] == 1]
         subNames = [movie[0] for movie in genreMovies]
         subCosines = calcCosineSim(bestTitleIndex, genreMovies)
         recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_DIRECTOR:
         mIndex = 0
         # directors start at fullVector index 836 (check again)
-        continue
+        director = calcEditDistance(uinput, dirDict.keys())[0]
+        print(f"\nLooking for a movie with {director} as the director")
+        dirMovies = [movie for movie in subFullVector if movie[dirDict[director] + 836] == 1]
+        subNames = [movie[0] for movie in dirMovies]
+        subCosines = calcCosineSim(bestTitleIndex, dirMovies)
+        recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_ACTOR:
         mIndex = 0
         # cast start at fullVector index 24
-        continue
+        actor = calcEditDistance(uinput, castDict.keys())[0]
+        print(f"\nLooking for a movie with {actor}")
+        actorMovies = [movie for movie in subFullVector if movie[castDict[actor] + 24] == 1]
+        subNames = [movie[0] for movie in actorMovies]
+        subCosines = calcCosineSim(bestTitleIndex, actorMovies)
+        recommend(subCosines, mIndex, subNames)
     elif nextState == State.UNK:
         print("\nI'm sorry, I don't understand how that pertains to movies.")
         continue

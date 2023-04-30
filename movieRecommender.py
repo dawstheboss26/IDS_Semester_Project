@@ -22,7 +22,7 @@ newVec = fullVector.copy()
 
 class State(Enum):
     ANOTHER = 1
-    SIMILAR_MOVIE = 2
+    START_OVER = 2
     SPECIFY_GENRE = 3
     SPECIFY_DIRECTOR = 4
     SPECIFY_ACTOR = 5
@@ -45,7 +45,7 @@ def calcEditDistance(target, vector):
 
 def findTargetMovie():
     # get user input and use edit distance to get the most similar movie to the one they provide
-    uinput = input("Name a movie that you want the recommended movie to be similar to: ")
+    uinput = input("\nName a movie that you want the recommended movie to be similar to: ")
     bestED = float('inf')
     bestTitleIndex = None
     for i, name in enumerate(names):
@@ -99,7 +99,8 @@ def determineNextState():
     textClass = None
 
     # use ChatGPT API here for text classification -- send uinput to it
-    chatInput = [{"role": "user", "content": "you are a sentence classifier. Sentences I give you will be one of these 7 classes: Class 1 is asking for another reccommendation. Class 2 is switching to a different movie to compare to. Class 3 is specifying genres. Class 4 is specifying directors. Class 5 is specifying actors. Class 6 is confirming the reccomendation. Classify a sentence as class 7 if it doesn't fit in classes 1, 2, 3, 4, 5, or 6. Respond with the format: <class number>. Here is the sentence:\n" + uinput}]
+    # chatInput = [{"role": "user", "content": "you are a sentence classifier. Sentences I give you will be one of these 7 classes: Class 1 is asking for another reccommendation. Class 2 is switching to a different movie to compare to. Class 3 is specifying genres. Class 4 is specifying directors. Class 5 is specifying actors. Class 6 is confirming the reccomendation. Classify a sentence as class 7 if it doesn't fit in classes 1, 2, 3, 4, 5, or 6. Respond with the format: <class number>. Here is the sentence:\n" + uinput}]
+    chatInput = [{"role": "user", "content": "you are a sentence classifier. Sentences I give you will be one of these 7 classes: Class 1 is asking for another reccommendation. Class 2 is starting over. Class 3 is specifying genres. Class 4 is specifying directors. Class 5 is specifying actors. Class 6 is confirming the recommendation. Classify a sentence as class 7 if it doesn't fit in classes 1, 2, 3, 4, 5, or 6. Respond with the format: <class number>. Here is the sentence:\n" + uinput}]
     #chatInput = [{"role": "user", "content": "say 0"}]
     response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=chatInput)
     reply = response['choices'][0]['message']['content']
@@ -114,7 +115,7 @@ def determineNextState():
         textClass = State.ANOTHER
     if reply == "2":
         #! this state is never selected
-        textClass = State.SIMILAR_MOVIE
+        textClass = State.START_OVER
     if reply == "3":
         textClass = State.SPECIFY_GENRE
     if reply == "4":
@@ -150,7 +151,7 @@ bestTitleIndex = findTargetMovie()
 
 cosines = calcCosineSim(bestTitleIndex)
 
-recommend(cosines, mIndex)
+recMovie = recommend(cosines, mIndex)
 
 subNames = names
 subCosines = cosines
@@ -161,12 +162,12 @@ while (not accept):
 
     if nextState == State.ANOTHER:
         mIndex += 1
-        recommend(cosines, mIndex)
-    elif nextState == State.SIMILAR_MOVIE:
+        recMovie = recommend(cosines, mIndex)
+    elif nextState == State.START_OVER:
         mIndex = 0
         bestTitleIndex = findTargetMovie()
         cosines = calcCosineSim(bestTitleIndex)
-        recommend(cosines, mIndex)
+        recMovie = recommend(cosines, mIndex)
     elif nextState == State.SPECIFY_GENRE:
         mIndex = 0
         # genres start at fullVector index 3
@@ -175,7 +176,7 @@ while (not accept):
         genreMovies = [movie for movie in subFullVector if movie[genreDict[genre.title()] + 3] == 1]
         subNames = [movie[0] for movie in genreMovies]
         subCosines = calcCosineSim(bestTitleIndex, genreMovies)
-        recommend(subCosines, mIndex, subNames)
+        recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_DIRECTOR:
         mIndex = 0
         # directors start at fullVector index 836 (check again)
@@ -184,7 +185,7 @@ while (not accept):
         dirMovies = [movie for movie in subFullVector if movie[dirDict[director] + 836] == 1]
         subNames = [movie[0] for movie in dirMovies]
         subCosines = calcCosineSim(bestTitleIndex, dirMovies)
-        recommend(subCosines, mIndex, subNames)
+        recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_ACTOR:
         mIndex = 0
         # cast start at fullVector index 24
@@ -193,7 +194,7 @@ while (not accept):
         actorMovies = [movie for movie in subFullVector if movie[castDict[actor] + 24] == 1]
         subNames = [movie[0] for movie in actorMovies]
         subCosines = calcCosineSim(bestTitleIndex, actorMovies)
-        recommend(subCosines, mIndex, subNames)
+        recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.UNK:
         print("\nI'm sorry, I don't understand how that pertains to movies.")
         continue

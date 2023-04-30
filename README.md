@@ -5,7 +5,7 @@ pip install -r requirements.txt
 ```
 
 ## Download the online CSV data
-Go to this [website](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=movies_metadata.csv)
+Go to this [website](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=movies_metadata.csv)  
 Download the **credits.csv** and **movies_metadata.csv**
 Place them in the **data** folder
 

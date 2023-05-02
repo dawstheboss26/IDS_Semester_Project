@@ -2,7 +2,6 @@ import json
 import editdistance
 import numpy as np
 import openai
-import os
 from numpy.linalg import norm
 from enum import Enum
 
@@ -20,6 +19,9 @@ castDict = inDict['castDict']
 dirDict = inDict['dirDict']
 newVec = fullVector.copy()
 
+#open state category training data
+tin = open('data/chatGPTprompt.txt')
+prompt = tin.read().strip()
 class State(Enum):
     ANOTHER = 1
     START_OVER = 2
@@ -99,9 +101,8 @@ def determineNextState():
     textClass = None
 
     # use ChatGPT API here for text classification -- send uinput to it
-    # chatInput = [{"role": "user", "content": "you are a sentence classifier. Sentences I give you will be one of these 7 classes: Class 1 is asking for another reccommendation. Class 2 is switching to a different movie to compare to. Class 3 is specifying genres. Class 4 is specifying directors. Class 5 is specifying actors. Class 6 is confirming the reccomendation. Classify a sentence as class 7 if it doesn't fit in classes 1, 2, 3, 4, 5, or 6. Respond with the format: <class number>. Here is the sentence:\n" + uinput}]
-    chatInput = [{"role": "user", "content": "you are a sentence classifier. Sentences I give you will be one of these 7 classes: Class 1 is asking for another reccommendation. Class 2 is starting over. Class 3 is specifying genres. Class 4 is specifying directors. Class 5 is specifying actors. Class 6 is confirming the recommendation. Classify a sentence as class 7 if it doesn't fit in classes 1, 2, 3, 4, 5, or 6. Respond with the format: <class number>. Here is the sentence:\n" + uinput}]
-    #chatInput = [{"role": "user", "content": "say 0"}]
+    #chatInput = [{"role": "user", "content": "you are a sentence classifier. Sentences I give you will be one of these 7 classes: Class 1 is asking for another reccommendation. Class 2 is starting over. Class 3 is specifying genres. Class 4 is specifying directors. Class 5 is specifying actors. Class 6 is confirming the recommendation. Classify a sentence as class 7 if it doesn't fit in classes 1, 2, 3, 4, 5, or 6. Respond with the format: <class number>. Here is the sentence:\n" + uinput}]
+    chatInput = [{"role": "user", "content": prompt + '"' + uinput + '"'}]
     response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=chatInput)
     reply = response['choices'][0]['message']['content']
     #print(reply)
@@ -159,7 +160,7 @@ subFullVector = fullVector
 
 while (not accept):
     nextState, uinput = determineNextState()
-
+    
     if nextState == State.ANOTHER:
         mIndex += 1
         recMovie = recommend(cosines, mIndex)
@@ -171,15 +172,17 @@ while (not accept):
     elif nextState == State.SPECIFY_GENRE:
         mIndex = 0
         # genres start at fullVector index 3
-        genre = calcEditDistance(uinput, genreDict.keys())[0]
-        print(f"\nLooking for a movie in the {genre} genre")
-        genreMovies = [movie for movie in subFullVector if movie[genreDict[genre.title()] + 3] == 1]
+        uinput = input("Enter the genre you would like --> ")
+        name, genre = calcEditDistance(uinput, genreDict.keys())
+        print(f"\nLooking for a movie in the {name} genre")
+        genreMovies = [movie for movie in subFullVector if movie[genre + 3] == 1]
         subNames = [movie[0] for movie in genreMovies]
         subCosines = calcCosineSim(bestTitleIndex, genreMovies)
         recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_DIRECTOR:
         mIndex = 0
         # directors start at fullVector index 836 (check again)
+        uinput = input("Enter the director you would like --> ")
         director = calcEditDistance(uinput, dirDict.keys())[0]
         print(f"\nLooking for a movie with {director} as the director")
         dirMovies = [movie for movie in subFullVector if movie[dirDict[director] + 836] == 1]
@@ -188,6 +191,7 @@ while (not accept):
         recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_ACTOR:
         mIndex = 0
+        uinput = input("Enter the actor/actress you would like --> ")
         # cast start at fullVector index 24
         actor = calcEditDistance(uinput, castDict.keys())[0]
         print(f"\nLooking for a movie with {actor}")

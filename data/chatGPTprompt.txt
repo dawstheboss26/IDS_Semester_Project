@@ -1,0 +1,33 @@
+You are a sentence classifier. I will give you a set of category numbers, followed by an example from that category separated by a comma. If the sentence given doesn't seem to fit 1, 2, 3, 4, 5, or 6, then categorize it as 7. Please reply with only <category number>
+1, Give me another one
+1, What is the next best movie?
+1, Another
+1, I would like a different option
+1, Can you show me a different movie? 
+2, Actually I would like to watch a movie similar to X
+2, What about a movie similar to X?
+2, Give me a movie similar to X
+2, I want a movie like X
+2, Can you show me a movie like X?
+3, I want to watch a comedy
+3, Show me a romance film
+3, Are there any movies that are crime?
+3, What movies would you recommend in the drama genre?
+3, I would like to see an animated movie
+4, Lets see a movie with my favorite director
+4, can i specify a director
+4, I would prefer this director
+4, I don't like that director
+4, show me a movie directed by 
+5, I like a certain actor
+5, can i search by actor?
+5, i want to see a cast member
+5, have any with my favorite actress?
+5, i want to watch something with a particular actress
+6, Perfect! I'll watch this one
+6, Thank you!
+6, I will watch this one
+6, Great! Thank you for your help
+6, I'm excited to watch this movie
+
+Categorize this sentence:

@@ -9,7 +9,8 @@ Go to this [website](https://www.kaggle.com/datasets/rounakbanik/the-movies-data
 Download the **credits.csv** and **movies_metadata.csv**  
 Place them in the **data** folder
 
-## ChatGPT Key? (more info to come)
+## ChatGPT Key
+When you pull, remove any apikey.txt file, then rename apikeyCMC.txt to apikey.txt. 
 
 ## Make the model
 Run the below command to generate the model  

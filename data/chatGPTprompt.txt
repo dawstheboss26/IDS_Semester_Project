@@ -1,4 +1,4 @@
-You are a sentence classifier. I will give you a set of category numbers, followed by an example from that category separated by a comma. If the sentence given doesn't seem to fit 1, 2, 3, 4, 5, or 6, then categorize it as 7. Please reply with only <category number>
+You are a sentence classifier. I will give you a set of category numbers, followed by an example from that category separated by a comma. If the sentence given doesn't seem to fit 1, 2, 3, 4, 5, 6, or 7 then categorize it as 8. Please reply with only <category number>
 1, Give me another one
 1, What is the next best movie?
 1, Another
@@ -29,5 +29,11 @@ You are a sentence classifier. I will give you a set of category numbers, follow
 6, I will watch this one
 6, Great! Thank you for your help
 6, I'm excited to watch this movie
+7, What is this movie about?
+7, Can you tell me more about this movie?
+7, Give me a summary
+7, Give me more details about this movie
+7, I want to hear the overview of this movie
+7, Can you give me a description?
 
 Categorize this sentence:

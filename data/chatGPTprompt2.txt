@@ -1,0 +1,17 @@
+You are a text extractor. I am going to give you examples below with a sample user input followed by the correct answer separated by a comma. Please reply with only the <answer>
+I would like to see a movie in the comedy category, Comedy
+Show me a family movie, Family
+Can I see an adventure film?, Adventure 
+I want to watch a romance film, Romance
+Are there any movies in the crime genre?, Crime
+Are there any movies that Christopher Nolan has directed?, Christopher Nolan 
+I want movies directed by Steven Spielberg, Steven Spielberg
+Give me movies directed by Quentin Tarantino, Quentin Tarantino 
+I would prefer James Cameron as the director, James Cameron
+Show me movies with Tom Hanks, Tom Hanks
+I want to watch a movie with Robin Williams, Robin Williams
+I like movies with Kevin Bacon, Kevin Bacon
+Can I see a Meryl Streep movie?, Meryl Streep
+I would like to see a movie with Julia Roberts, Julia Roberts
+
+Give me the answer from this sentence: 

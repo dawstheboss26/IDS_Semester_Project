@@ -25,7 +25,7 @@ descriptions = json.loads(inDictJson)
 
 #open state category training data
 tin = open('data/chatGPTprompt.txt')
-prompt = tin.read().strip()
+cat_prompt = tin.read().strip()
 class State(Enum):
     ANOTHER = 1
     START_OVER = 2
@@ -35,6 +35,10 @@ class State(Enum):
     ACCEPT = 6
     DESCRIPTION = 7
     UNK = 8
+
+# open text extraction training data
+tin = open('data/chatGPTprompt2.txt')
+ext_prompt = tin.read().strip()
 
 genres = {"Music", "Family", "Drama", "Horror", "War", "Documentary", "Adventure", "TV Movie", "Animation", "Mystery", "Action",
          "Science Fiction", "Foreign", "Comedy", "Crime", "Romance", "History", "Aniplex", "Western", "Fantasy", "Thriller"}
@@ -108,7 +112,7 @@ def determineNextState():
 
     # use ChatGPT API here for text classification -- send uinput to it
     #chatInput = [{"role": "user", "content": "you are a sentence classifier. Sentences I give you will be one of these 7 classes: Class 1 is asking for another reccommendation. Class 2 is starting over. Class 3 is specifying genres. Class 4 is specifying directors. Class 5 is specifying actors. Class 6 is confirming the recommendation. Classify a sentence as class 7 if it doesn't fit in classes 1, 2, 3, 4, 5, or 6. Respond with the format: <class number>. Here is the sentence:\n" + uinput}]
-    chatInput = [{"role": "user", "content": prompt + '"' + uinput + '"'}]
+    chatInput = [{"role": "user", "content": cat_prompt + '"' + uinput + '"'}]
     response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=chatInput)
     reply = response['choices'][0]['message']['content']
     #print(reply)
@@ -183,19 +187,23 @@ while (not accept):
         recMovie = recommend(cosines, mIndex)
     elif nextState == State.SPECIFY_GENRE:
         mIndex = 0
+        chatInput = [{"role": "user", "content": ext_prompt + '"' + uinput + '"'}]
+        response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=chatInput)
+        genre = response['choices'][0]['message']['content']
         # genres start at fullVector index 3
-        uinput = input("Enter the genre you would like --> ")
-        name, genre = calcEditDistance(uinput, genreDict.keys())
-        print(f"\nLooking for a movie in the {name} genre")
-        subFullVector = [movie for movie in subFullVector if movie[genre + 3] == 1]
+        genre, index = calcEditDistance(genre, genreDict.keys())
+        print(f"\nLooking for a movie in the {genre} genre")
+        subFullVector = [movie for movie in subFullVector if movie[index + 3] == 1]
         subNames = [movie[0] for movie in subFullVector]
         subCosines = calcCosineSim(bestTitleIndex, subFullVector)
         recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_DIRECTOR:
         mIndex = 0
         # directors start at fullVector index 836 (check again)
-        uinput = input("Enter the director you would like --> ")
-        director = calcEditDistance(uinput, dirDict.keys())[0]
+        chatInput = [{"role": "user", "content": ext_prompt + '"' + uinput + '"'}]
+        response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=chatInput)
+        director = response['choices'][0]['message']['content']
+        director = calcEditDistance(director, dirDict.keys())[0]
         print(f"\nLooking for a movie with {director} as the director")
         subFullVector = [movie for movie in subFullVector if movie[dirDict[director] + 836] == 1]
         subNames = [movie[0] for movie in subFullVector]
@@ -203,9 +211,11 @@ while (not accept):
         recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_ACTOR:
         mIndex = 0
-        uinput = input("Enter the actor/actress you would like --> ")
+        chatInput = [{"role": "user", "content": ext_prompt + '"' + uinput + '"'}]
+        response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=chatInput)
+        actor = response['choices'][0]['message']['content']
         # cast start at fullVector index 24
-        actor = calcEditDistance(uinput, castDict.keys())[0]
+        actor = calcEditDistance(actor, castDict.keys())[0]
         print(f"\nLooking for a movie with {actor}")
         subFullVector = [movie for movie in subFullVector if movie[castDict[actor] + 24] == 1]
         subNames = [movie[0] for movie in subFullVector]

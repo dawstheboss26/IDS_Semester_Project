@@ -19,6 +19,10 @@ castDict = inDict['castDict']
 dirDict = inDict['dirDict']
 newVec = fullVector.copy()
 
+fin = open('data/descriptions.json', 'r')
+inDictJson = fin.read()
+descriptions = json.loads(inDictJson)
+
 #open state category training data
 tin = open('data/chatGPTprompt.txt')
 prompt = tin.read().strip()
@@ -29,7 +33,8 @@ class State(Enum):
     SPECIFY_DIRECTOR = 4
     SPECIFY_ACTOR = 5
     ACCEPT = 6
-    UNK = 7
+    DESCRIPTION = 7
+    UNK = 8
 
 genres = {"Music", "Family", "Drama", "Horror", "War", "Documentary", "Adventure", "TV Movie", "Animation", "Mystery", "Action",
          "Science Fiction", "Foreign", "Comedy", "Crime", "Romance", "History", "Aniplex", "Western", "Fantasy", "Thriller"}
@@ -95,6 +100,7 @@ def recommend(cosines, mIndex = 0, names = names):
     rec = movCos[mIndex][0]
 
     print(f'\nI would suggest: {rec}')
+    return rec
 
 def determineNextState():
     uinput = input("\n> ")
@@ -126,6 +132,8 @@ def determineNextState():
     if reply == "6":
         textClass = State.ACCEPT
     if reply == "7":
+        textClass = State.DESCRIPTION
+    if reply == "8": 
         textClass = State.UNK
         
     # print(textClass)
@@ -168,6 +176,10 @@ while (not accept):
         mIndex = 0
         bestTitleIndex = findTargetMovie()
         cosines = calcCosineSim(bestTitleIndex)
+        # update sub vectors
+        subNames = names
+        subCosines = cosines
+        subFullVector = fullVector
         recMovie = recommend(cosines, mIndex)
     elif nextState == State.SPECIFY_GENRE:
         mIndex = 0
@@ -175,9 +187,9 @@ while (not accept):
         uinput = input("Enter the genre you would like --> ")
         name, genre = calcEditDistance(uinput, genreDict.keys())
         print(f"\nLooking for a movie in the {name} genre")
-        genreMovies = [movie for movie in subFullVector if movie[genre + 3] == 1]
-        subNames = [movie[0] for movie in genreMovies]
-        subCosines = calcCosineSim(bestTitleIndex, genreMovies)
+        subFullVector = [movie for movie in subFullVector if movie[genre + 3] == 1]
+        subNames = [movie[0] for movie in subFullVector]
+        subCosines = calcCosineSim(bestTitleIndex, subFullVector)
         recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_DIRECTOR:
         mIndex = 0
@@ -185,9 +197,9 @@ while (not accept):
         uinput = input("Enter the director you would like --> ")
         director = calcEditDistance(uinput, dirDict.keys())[0]
         print(f"\nLooking for a movie with {director} as the director")
-        dirMovies = [movie for movie in subFullVector if movie[dirDict[director] + 836] == 1]
-        subNames = [movie[0] for movie in dirMovies]
-        subCosines = calcCosineSim(bestTitleIndex, dirMovies)
+        subFullVector = [movie for movie in subFullVector if movie[dirDict[director] + 836] == 1]
+        subNames = [movie[0] for movie in subFullVector]
+        subCosines = calcCosineSim(bestTitleIndex, subFullVector)
         recMovie = recommend(subCosines, mIndex, subNames)
     elif nextState == State.SPECIFY_ACTOR:
         mIndex = 0
@@ -195,10 +207,13 @@ while (not accept):
         # cast start at fullVector index 24
         actor = calcEditDistance(uinput, castDict.keys())[0]
         print(f"\nLooking for a movie with {actor}")
-        actorMovies = [movie for movie in subFullVector if movie[castDict[actor] + 24] == 1]
-        subNames = [movie[0] for movie in actorMovies]
-        subCosines = calcCosineSim(bestTitleIndex, actorMovies)
+        subFullVector = [movie for movie in subFullVector if movie[castDict[actor] + 24] == 1]
+        subNames = [movie[0] for movie in subFullVector]
+        subCosines = calcCosineSim(bestTitleIndex, subFullVector)
         recMovie = recommend(subCosines, mIndex, subNames)
+    elif nextState == State.DESCRIPTION:
+        print(f"\n{recMovie} Overview:")
+        print(descriptions[recMovie])
     elif nextState == State.UNK:
         print("\nI'm sorry, I don't understand how that pertains to movies.")
         continue

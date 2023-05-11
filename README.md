@@ -11,6 +11,7 @@ Place them in the **data** folder
 
 ## ChatGPT Key
 When you pull, remove any apikey.txt file, then rename apikeyCMC.txt to apikey.txt. 
+Alternatively, just paste your own OpenAI API key into a file named apikey.txt and place it in the main directory.
 
 ## Make the model
 Run the below command to generate the model  

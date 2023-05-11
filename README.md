@@ -3,6 +3,10 @@
 ```
 pip install -r requirements.txt
 ```
+### If that does not work, use the condensed version instead:
+```
+pip install -r condensedRequirements.txt
+```
 
 ## Download the online CSV data
 Go to this [website](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=movies_metadata.csv)  
